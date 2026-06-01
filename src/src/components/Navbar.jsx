@@ -1,19 +1,21 @@
 import { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
-import { ShoppingBag, Menu, X, User, Store } from 'lucide-react'
+import { ShoppingBag, Menu, X, User, Store, Globe } from 'lucide-react'
 import Logo from './Logo.jsx'
 import { useCart } from '../context/CartContext.jsx'
-
-const links = [
-  { to: '/offers', label: 'Предложения' },
-  { to: '/about', label: 'О проекте' },
-  { to: '/partner', label: 'Партнёрам' },
-  { to: '/contacts', label: 'Контакты' },
-]
+import { useI18n } from '../lib/i18n.jsx'
 
 export default function Navbar() {
   const { count } = useCart()
+  const { t, lang, toggleLang } = useI18n()
   const [open, setOpen] = useState(false)
+
+  const links = [
+    { to: '/offers', label: t('nav.offers') },
+    { to: '/about', label: t('nav.about') },
+    { to: '/partner', label: t('nav.partner') },
+    { to: '/contacts', label: t('nav.contacts') },
+  ]
 
   const linkClass = ({ isActive }) =>
     `px-3 py-2 rounded-full text-sm font-semibold transition-colors ${
@@ -34,10 +36,18 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link to="/account" className="hidden sm:inline-flex btn-ghost" aria-label="Аккаунт">
-            <User size={18} /> Кабинет
+          <button
+            onClick={toggleLang}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold text-primary-dark/70 hover:text-primary hover:bg-mint/30 transition-colors"
+            aria-label={t('nav.lang.aria')}
+            title={lang === 'ru' ? 'English' : 'Русский'}
+          >
+            <Globe size={16} /> {lang === 'ru' ? 'EN' : 'RU'}
+          </button>
+          <Link to="/account" className="hidden sm:inline-flex btn-ghost" aria-label={t('nav.account.aria')}>
+            <User size={18} /> {t('nav.account')}
           </Link>
-          <Link to="/cart" className="relative btn-ghost" aria-label="Корзина">
+          <Link to="/cart" className="relative btn-ghost" aria-label={t('nav.cart.aria')}>
             <ShoppingBag size={20} />
             {count > 0 && (
               <span className="absolute -top-0.5 -right-0.5 grid place-items-center min-w-5 h-5 px-1 rounded-full bg-accent text-primary-dark text-xs font-bold">
@@ -48,7 +58,7 @@ export default function Navbar() {
           <button
             className="md:hidden btn-ghost"
             onClick={() => setOpen((o) => !o)}
-            aria-label="Меню"
+            aria-label={t('nav.menu.aria')}
           >
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -64,10 +74,10 @@ export default function Navbar() {
               </NavLink>
             ))}
             <NavLink to="/account" className={linkClass} onClick={() => setOpen(false)}>
-              <span className="inline-flex items-center gap-2"><User size={16} /> Кабинет</span>
+              <span className="inline-flex items-center gap-2"><User size={16} /> {t('nav.account')}</span>
             </NavLink>
             <NavLink to="/partner" className={linkClass} onClick={() => setOpen(false)}>
-              <span className="inline-flex items-center gap-2"><Store size={16} /> Партнёрам</span>
+              <span className="inline-flex items-center gap-2"><Store size={16} /> {t('nav.partner')}</span>
             </NavLink>
           </div>
         </div>

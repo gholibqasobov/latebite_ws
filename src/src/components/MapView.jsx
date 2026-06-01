@@ -1,10 +1,10 @@
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
-import { Link } from 'react-router-dom'
 import { restaurants, USER_LOCATION } from '../data/restaurants.js'
 import { dishesByRestaurant } from '../data/dishes.js'
 import { distanceToRestaurant, formatDistance } from '../data/geo.js'
 import { tenge } from '../lib/format.js'
+import { useI18n } from '../lib/i18n.jsx'
 
 // Custom pin marker (divIcon) — avoids missing default-marker-icon assets.
 const pinIcon = (count) =>
@@ -23,6 +23,7 @@ const pinIcon = (count) =>
   })
 
 export default function MapView({ onSelectRestaurant }) {
+  const { t, lang, td, tres } = useI18n()
   return (
     <MapContainer
       center={[USER_LOCATION.lat, USER_LOCATION.lng]}
@@ -41,25 +42,25 @@ export default function MapView({ onSelectRestaurant }) {
         radius={9}
         pathOptions={{ color: '#F4D03F', fillColor: '#F4D03F', fillOpacity: 1, weight: 3 }}
       >
-        <Popup>Вы здесь · {USER_LOCATION.label}</Popup>
+        <Popup>{t('map.youHere', { label: t('map.userLocation') })}</Popup>
       </CircleMarker>
 
       {restaurants.map((r) => {
         const list = dishesByRestaurant(r.id)
-        const distance = formatDistance(distanceToRestaurant(r))
+        const distance = formatDistance(distanceToRestaurant(r), lang)
         return (
           <Marker key={r.id} position={[r.lat, r.lng]} icon={pinIcon(list.length)}>
             <Popup minWidth={240} maxWidth={260}>
               <div className="font-sans">
                 <div className="font-bold text-primary text-base">{r.name}</div>
                 <div className="text-xs text-primary-dark/60 mb-2">
-                  ★ {r.rating} · {r.cuisine} · {distance}
+                  ★ {r.rating} · {tres(r, 'cuisine')} · {distance}
                 </div>
                 <ul className="space-y-1.5 max-h-44 overflow-auto pr-1">
                   {list.map((d) => (
                     <li key={d.id} className="flex justify-between gap-2 text-sm">
-                      <span className="truncate">{d.name}</span>
-                      <span className="font-semibold text-primary whitespace-nowrap">{tenge(d.price)}</span>
+                      <span className="truncate">{td(d, 'name')}</span>
+                      <span className="font-semibold text-primary whitespace-nowrap">{tenge(d.price, lang)}</span>
                     </li>
                   ))}
                 </ul>
@@ -67,7 +68,7 @@ export default function MapView({ onSelectRestaurant }) {
                   onClick={() => onSelectRestaurant?.(r.id)}
                   className="btn-primary w-full mt-3 !py-2 text-sm"
                 >
-                  Показать {list.length} предложений
+                  {t('map.showOffers', { n: list.length })}
                 </button>
               </div>
             </Popup>

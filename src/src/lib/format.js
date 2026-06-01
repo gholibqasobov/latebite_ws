@@ -1,6 +1,8 @@
 // Format a number as Kazakhstani tenge, e.g. 1370 -> "1 370 ₸"
-export const tenge = (n) =>
-  `${Math.round(n).toLocaleString('ru-RU')} ₸`
+export const tenge = (n, lang = 'ru') => {
+  const locale = lang === 'en' ? 'en-US' : 'ru-RU'
+  return `${Math.round(n).toLocaleString(locale)} ₸`
+}
 
 export const plural = (n, one, few, many) => {
   const mod10 = n % 10

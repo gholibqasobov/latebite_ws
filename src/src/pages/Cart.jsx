@@ -5,9 +5,11 @@ import { tenge } from '../lib/format.js'
 import { useCart } from '../context/CartContext.jsx'
 import { dishById, CO2_PER_MEAL } from '../data/dishes.js'
 import { restaurantById } from '../data/restaurants.js'
+import { useI18n } from '../lib/i18n.jsx'
 
 export default function Cart() {
   const { items, setQty, remove, count } = useCart()
+  const { t, td, lang } = useI18n()
   const navigate = useNavigate()
 
   const lines = Object.entries(items)
@@ -30,17 +32,17 @@ export default function Cart() {
     return (
       <div className="section py-20 text-center">
         <ShoppingBag size={48} className="mx-auto text-primary/30" />
-        <h1 className="mt-4 text-2xl font-extrabold text-primary">Корзина пуста</h1>
-        <p className="mt-2 text-primary-dark/60">Загляните в предложения — там вкусно и со скидкой.</p>
-        <Link to="/offers" className="btn-primary mt-6">Смотреть предложения</Link>
+        <h1 className="mt-4 text-2xl font-extrabold text-primary">{t('cart.empty.title')}</h1>
+        <p className="mt-2 text-primary-dark/60">{t('cart.empty.sub')}</p>
+        <Link to="/offers" className="btn-primary mt-6">{t('cart.empty.cta')}</Link>
       </div>
     )
   }
 
   return (
     <div className="section py-8">
-      <h1 className="text-3xl font-extrabold text-primary">Корзина</h1>
-      <p className="text-primary-dark/60 mt-1">Можно собрать заказ из нескольких заведений и оплатить разом.</p>
+      <h1 className="text-3xl font-extrabold text-primary">{t('cart.title')}</h1>
+      <p className="text-primary-dark/60 mt-1">{t('cart.sub')}</p>
 
       <div className="mt-6 grid lg:grid-cols-[1fr_340px] gap-6 items-start">
         <div className="space-y-6">
@@ -52,13 +54,13 @@ export default function Cart() {
                 <div className="divide-y divide-black/[0.06]">
                   {rlines.map(({ dish, qty }) => (
                     <div key={dish.id} className="p-4 flex gap-4">
-                      <Img src={dish.photo} seed={dish.id} alt={dish.name} className="w-20 h-20 rounded-xl object-cover shrink-0" />
+                      <Img src={dish.photo} seed={dish.id} alt={td(dish, 'name')} className="w-20 h-20 rounded-xl object-cover shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-primary-dark">{dish.name}</div>
-                        <div className="text-xs text-primary-dark/50">{dish.portion} · {dish.pickup}</div>
+                        <div className="font-semibold text-primary-dark">{td(dish, 'name')}</div>
+                        <div className="text-xs text-primary-dark/50">{td(dish, 'portion')} · {td(dish, 'pickup')}</div>
                         <div className="mt-1 text-sm">
-                          <span className="font-bold text-primary">{tenge(dish.price)}</span>
-                          <span className="ml-2 text-primary-dark/40 line-through text-xs">{tenge(dish.oldPrice)}</span>
+                          <span className="font-bold text-primary">{tenge(dish.price, lang)}</span>
+                          <span className="ml-2 text-primary-dark/40 line-through text-xs">{tenge(dish.oldPrice, lang)}</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-end justify-between">
@@ -81,24 +83,24 @@ export default function Cart() {
 
         {/* Summary */}
         <div className="card p-5 lg:sticky lg:top-20 space-y-4">
-          <h2 className="font-bold text-primary text-lg">Итого</h2>
+          <h2 className="font-bold text-primary text-lg">{t('cart.summary.total')}</h2>
           <div className="space-y-2 text-sm">
-            <Row label={`Блюд: ${count}`} value={tenge(oldTotal)} muted />
-            <Row label="Скидка LateBite" value={`−${tenge(saved)}`} accent />
+            <Row label={t('cart.summary.dishes', { n: count })} value={tenge(oldTotal, lang)} muted />
+            <Row label={t('cart.summary.discount')} value={`−${tenge(saved, lang)}`} accent />
             <div className="border-t border-black/[0.06] pt-2 flex justify-between font-extrabold text-primary text-lg">
-              <span>К оплате</span><span>{tenge(total)}</span>
+              <span>{t('cart.summary.toPay')}</span><span>{tenge(total, lang)}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 rounded-xl bg-mint/30 px-3 py-2 text-sm text-primary">
-            <Leaf size={16} /> Вы спасаете ~{co2} кг CO₂
+            <Leaf size={16} /> {t('cart.summary.co2', { n: co2 })}
           </div>
 
           <button onClick={() => navigate('/checkout')} className="btn-primary w-full text-base !py-3">
-            Оформить заказ <ArrowRight size={18} />
+            {t('cart.summary.cta')} <ArrowRight size={18} />
           </button>
           <Link to="/offers" className="block text-center text-sm text-primary-dark/60 hover:text-primary">
-            продолжить выбор
+            {t('cart.continue')}
           </Link>
         </div>
       </div>

@@ -4,9 +4,11 @@ import { ShieldCheck, Loader2, Phone } from 'lucide-react'
 import { tenge } from '../lib/format.js'
 import { useCart } from '../context/CartContext.jsx'
 import { dishById } from '../data/dishes.js'
+import { useI18n } from '../lib/i18n.jsx'
 
 export default function Checkout() {
   const { items, count, clear } = useCart()
+  const { t, td, lang } = useI18n()
   const navigate = useNavigate()
   const [paying, setPaying] = useState(false)
 
@@ -16,8 +18,8 @@ export default function Checkout() {
   if (count === 0) {
     return (
       <div className="section py-20 text-center">
-        <p className="text-primary-dark/60">Корзина пуста.</p>
-        <Link to="/offers" className="btn-primary mt-4">К предложениям</Link>
+        <p className="text-primary-dark/60">{t('checkout.empty')}</p>
+        <Link to="/offers" className="btn-primary mt-4">{t('checkout.toOffers')}</Link>
       </div>
     )
   }
@@ -34,30 +36,30 @@ export default function Checkout() {
 
   return (
     <div className="section py-8 max-w-2xl">
-      <h1 className="text-3xl font-extrabold text-primary">Оформление и оплата</h1>
+      <h1 className="text-3xl font-extrabold text-primary">{t('checkout.title')}</h1>
 
       <div className="mt-6 card p-5 space-y-3">
-        <h2 className="font-bold text-primary">Ваш заказ</h2>
+        <h2 className="font-bold text-primary">{t('checkout.order')}</h2>
         {lines.map(({ dish, qty }) => (
           <div key={dish.id} className="flex justify-between text-sm">
-            <span>{dish.name} × {qty}</span>
-            <span className="font-semibold">{tenge(dish.price * qty)}</span>
+            <span>{td(dish, 'name')} × {qty}</span>
+            <span className="font-semibold">{tenge(dish.price * qty, lang)}</span>
           </div>
         ))}
         <div className="border-t border-black/[0.06] pt-3 flex justify-between font-extrabold text-primary text-lg">
-          <span>К оплате</span><span>{tenge(total)}</span>
+          <span>{t('checkout.toPay')}</span><span>{tenge(total, lang)}</span>
         </div>
       </div>
 
       <div className="mt-5 card p-5">
-        <h2 className="font-bold text-primary">Способ оплаты</h2>
+        <h2 className="font-bold text-primary">{t('checkout.method')}</h2>
         <label className="mt-3 flex items-center gap-3 p-3 rounded-xl border-2 border-[#F14635] bg-[#F14635]/5">
           <input type="radio" defaultChecked className="accent-[#F14635]" />
           <span className="font-bold text-[#F14635] text-lg">Kaspi.kz</span>
-          <span className="text-sm text-primary-dark/60">Kaspi Pay · оплата в приложении</span>
+          <span className="text-sm text-primary-dark/60">{t('checkout.kaspiSub')}</span>
         </label>
         <div className="mt-3 flex items-center gap-2 text-sm text-primary-dark/60">
-          <Phone size={15} /> Номер телефона +7 (777) 123-45-67
+          <Phone size={15} /> {t('checkout.phone')}
         </div>
       </div>
 
@@ -67,14 +69,14 @@ export default function Checkout() {
         className="btn w-full mt-6 text-base !py-4 bg-[#F14635] text-white hover:brightness-105 active:scale-[0.99] shadow-soft"
       >
         {paying ? (
-          <><Loader2 size={20} className="animate-spin" /> Оплата через Kaspi…</>
+          <><Loader2 size={20} className="animate-spin" /> {t('checkout.paying')}</>
         ) : (
-          <>Оплатить {tenge(total)} через Kaspi</>
+          <>{t('checkout.payBtn', { total: tenge(total, lang) })}</>
         )}
       </button>
 
       <div className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-dark/50">
-        <ShieldCheck size={14} /> Демо-оплата. Реальные платежи Kaspi.kz подключаются на запуске.
+        <ShieldCheck size={14} /> {t('checkout.disclaimer')}
       </div>
     </div>
   )

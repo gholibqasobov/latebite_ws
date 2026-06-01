@@ -6,6 +6,7 @@ import DishCard from '../components/DishCard.jsx'
 import { dishes } from '../data/dishes.js'
 import { restaurantById, restaurants } from '../data/restaurants.js'
 import { distanceToRestaurant, distanceBucket } from '../data/geo.js'
+import { useT } from '../lib/i18n.jsx'
 
 const pickupMinutes = (d) => {
   // parse "сегодня HH:MM–HH:MM" -> minutes of start time, for sorting
@@ -14,6 +15,7 @@ const pickupMinutes = (d) => {
 }
 
 export default function Offers() {
+  const t = useT()
   const [filters, setFilters] = useState({ distance: 'all', cuisine: 'all', sort: 'distance' })
   const [restaurantFilter, setRestaurantFilter] = useState(null)
 
@@ -50,9 +52,9 @@ export default function Offers() {
     <div className="section py-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-extrabold text-primary">Предложения рядом</h1>
+          <h1 className="text-3xl font-extrabold text-primary">{t('offers.title')}</h1>
           <p className="text-primary-dark/60 mt-1">
-            {restaurants.length} заведений · {dishes.length} блюд со скидкой в Алматы
+            {t('offers.sub', { rest: restaurants.length, dish: dishes.length })}
           </p>
         </div>
       </div>
@@ -70,7 +72,7 @@ export default function Offers() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm text-primary-dark/60">
-              Найдено: <b className="text-primary">{filtered.length}</b>
+              {t('offers.found')} <b className="text-primary">{filtered.length}</b>
             </span>
             {activeRestaurant && (
               <button
@@ -84,7 +86,7 @@ export default function Offers() {
 
           {filtered.length === 0 ? (
             <div className="card p-10 text-center text-primary-dark/60">
-              Ничего не найдено. Попробуйте изменить фильтры.
+              {t('offers.empty')}
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">

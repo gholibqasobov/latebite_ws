@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../lib/i18n.jsx'
 
 // Counts up to `value` once it scrolls into view.
 export default function EcoCounter({ value, duration = 1600 }) {
+  const { numberLocale } = useI18n()
   const [display, setDisplay] = useState(0)
   const ref = useRef(null)
   const started = useRef(false)
@@ -29,5 +31,5 @@ export default function EcoCounter({ value, duration = 1600 }) {
     return () => io.disconnect()
   }, [value, duration])
 
-  return <span ref={ref}>{display.toLocaleString('ru-RU')}</span>
+  return <span ref={ref}>{display.toLocaleString(numberLocale())}</span>
 }

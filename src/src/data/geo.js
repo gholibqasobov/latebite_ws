@@ -18,9 +18,10 @@ export function distanceToRestaurant(restaurant) {
   return distanceMeters(USER_LOCATION, restaurant)
 }
 
-export function formatDistance(m) {
-  if (m < 1000) return `${Math.round(m / 10) * 10} м`
-  return `${(m / 1000).toFixed(1)} км`
+export function formatDistance(m, lang = 'ru') {
+  const en = lang === 'en'
+  if (m < 1000) return `${Math.round(m / 10) * 10} ${en ? 'm' : 'м'}`
+  return `${(m / 1000).toFixed(1)} ${en ? 'km' : 'км'}`
 }
 
 // Distance buckets used by the filter bar.
