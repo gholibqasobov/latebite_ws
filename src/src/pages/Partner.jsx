@@ -1,0 +1,349 @@
+import { useState } from 'react'
+import {
+  UtensilsCrossed, ClipboardList, QrCode, BarChart3, Star, Settings,
+  Plus, Pencil, Trash2, X, Check, ScanLine, TrendingUp, Package, Leaf,
+} from 'lucide-react'
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from 'recharts'
+import Img from '../components/Img.jsx'
+import { tenge } from '../lib/format.js'
+import { useToast } from '../context/ToastContext.jsx'
+import { dishesByRestaurant, dishById, discountPct } from '../data/dishes.js'
+import { incomingOrders } from '../data/orders.js'
+import { partnerAnalytics } from '../data/ecoStats.js'
+import { reviews } from '../data/reviews.js'
+import { restaurantById } from '../data/restaurants.js'
+
+const RID = 'navat' // demo restaurant: Navat
+const tabs = [
+  { id: 'menu', label: 'Меню', icon: UtensilsCrossed },
+  { id: 'orders', label: 'Заказы', icon: ClipboardList },
+  { id: 'scanner', label: 'QR-сканер', icon: QrCode },
+  { id: 'analytics', label: 'Аналитика', icon: BarChart3 },
+  { id: 'reviews', label: 'Отзывы', icon: Star },
+  { id: 'profile', label: 'Профиль', icon: Settings },
+]
+
+export default function Partner() {
+  const [tab, setTab] = useState('menu')
+  const restaurant = restaurantById(RID)
+
+  return (
+    <div className="section py-8">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <span className="chip bg-accent/40 text-primary-dark font-semibold">Кабинет партнёра</span>
+          <h1 className="mt-2 text-2xl font-extrabold text-primary">{restaurant.name}</h1>
+          <p className="text-primary-dark/60 text-sm">{restaurant.address}</p>
+        </div>
+        <div className="flex gap-3">
+          <MiniStat label="Выручка / нед." value={tenge(partnerAnalytics.totals.revenue)} />
+          <MiniStat label="Продано блюд" value={partnerAnalytics.totals.meals} />
+        </div>
+      </div>
+
+      <div className="mt-6 flex gap-2 overflow-x-auto no-scrollbar border-b border-black/[0.06] pb-px">
+        {tabs.map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px transition-colors ${
+              tab === t.id ? 'border-primary text-primary' : 'border-transparent text-primary-dark/50 hover:text-primary'
+            }`}>
+            <t.icon size={16} /> {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6">
+        {tab === 'menu' && <MenuManager />}
+        {tab === 'orders' && <Orders />}
+        {tab === 'scanner' && <Scanner />}
+        {tab === 'analytics' && <Analytics />}
+        {tab === 'reviews' && <Reviews />}
+        {tab === 'profile' && <Profile restaurant={restaurant} />}
+      </div>
+    </div>
+  )
+}
+
+function MenuManager() {
+  const { toast } = useToast()
+  const [meals, setMeals] = useState(() =>
+    dishesByRestaurant(RID).map((d) => ({ id: d.id, name: d.name, price: d.price, oldPrice: d.oldPrice, qty: Math.ceil(Math.random() * 6) + 2, portion: d.portion, pickup: d.pickup, description: d.description, photo: d.photo })),
+  )
+  const [editing, setEditing] = useState(null) // meal object or 'new'
+
+  const remove = (id) => { setMeals((m) => m.filter((x) => x.id !== id)); toast('Блюдо удалено') }
+  const save = (meal) => {
+    setMeals((m) => {
+      const exists = m.some((x) => x.id === meal.id)
+      return exists ? m.map((x) => (x.id === meal.id ? meal : x)) : [{ ...meal, id: `new-${Date.now()}` }, ...m]
+    })
+    setEditing(null)
+    toast('Блюдо сохранено')
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="font-bold text-primary">Surplus-блюда ({meals.length})</h2>
+        <button onClick={() => setEditing('new')} className="btn-primary !py-2 text-sm"><Plus size={16} /> Добавить блюдо</button>
+      </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {meals.map((m) => (
+          <div key={m.id} className="card overflow-hidden">
+            <Img src={m.photo} seed={m.id} alt={m.name} className="w-full h-32 object-cover" />
+            <div className="p-4">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-bold text-primary-dark leading-tight">{m.name}</h3>
+                <span className="chip bg-accent text-primary-dark text-xs font-bold shrink-0">−{discountPct(m)}%</span>
+              </div>
+              <div className="mt-1 text-sm"><b className="text-primary">{tenge(m.price)}</b> <span className="line-through text-primary-dark/40 text-xs">{tenge(m.oldPrice)}</span></div>
+              <div className="mt-1 text-xs text-primary-dark/50">{m.portion} · осталось: {m.qty} шт · {m.pickup}</div>
+              <div className="mt-3 flex gap-2">
+                <button onClick={() => setEditing(m)} className="btn-ghost !px-3 !py-1.5 text-sm flex-1"><Pencil size={14} /> Изм.</button>
+                <button onClick={() => remove(m.id)} className="btn-ghost !px-3 !py-1.5 text-sm text-red-500 hover:bg-red-50"><Trash2 size={14} /></button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {editing && <MealForm meal={editing === 'new' ? null : editing} onClose={() => setEditing(null)} onSave={save} />}
+    </div>
+  )
+}
+
+function MealForm({ meal, onClose, onSave }) {
+  const [form, setForm] = useState(
+    meal || { name: '', price: 0, oldPrice: 0, qty: 1, portion: '', pickup: 'сегодня 21:00–23:00', description: '', photo: '' },
+  )
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  return (
+    <div className="fixed inset-0 z-[1000] grid place-items-center bg-black/40 p-4" onClick={onClose}>
+      <div className="card w-full max-w-lg p-6 max-h-[90vh] overflow-auto animate-fade-up" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-primary">{meal ? 'Редактировать блюдо' : 'Новое блюдо'}</h3>
+          <button onClick={onClose} className="text-primary-dark/40 hover:text-primary"><X size={20} /></button>
+        </div>
+        <div className="mt-4 grid gap-3">
+          <In label="Название" value={form.name} onChange={(v) => set('name', v)} />
+          <div className="grid grid-cols-2 gap-3">
+            <In label="Цена со скидкой, ₸" type="number" value={form.price} onChange={(v) => set('price', +v)} />
+            <In label="Старая цена, ₸" type="number" value={form.oldPrice} onChange={(v) => set('oldPrice', +v)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <In label="Количество" type="number" value={form.qty} onChange={(v) => set('qty', +v)} />
+            <In label="Порция / вес" value={form.portion} onChange={(v) => set('portion', v)} />
+          </div>
+          <In label="Время выдачи" value={form.pickup} onChange={(v) => set('pickup', v)} />
+          <label className="block">
+            <span className="text-xs font-semibold text-primary-dark/50 uppercase">Описание</span>
+            <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={2}
+              className="mt-1 w-full rounded-xl border border-black/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          </label>
+          <div className="text-xs text-primary-dark/40">Фото загружается в реальной версии; в демо используется заглушка.</div>
+        </div>
+        <div className="mt-5 flex gap-3 justify-end">
+          <button onClick={onClose} className="btn-ghost">Отмена</button>
+          <button onClick={() => onSave({ ...form, photo: form.photo || dishById('kz-plov').photo })} className="btn-primary"><Check size={16} /> Сохранить</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Orders() {
+  const [orders, setOrders] = useState(incomingOrders)
+  const advance = (id) =>
+    setOrders((o) => o.map((x) => (x.id === id ? { ...x, status: x.status === 'Новый' ? 'Готов к выдаче' : 'Выдан' } : x)))
+
+  const color = (s) => s === 'Новый' ? 'bg-accent/40 text-primary-dark' : s === 'Готов к выдаче' ? 'bg-mint/60 text-primary' : 'bg-black/5 text-primary-dark/50'
+
+  return (
+    <div className="card divide-y divide-black/[0.06]">
+      {orders.map((o) => {
+        const names = o.items.map((it) => `${dishById(it.dishId)?.name || 'Блюдо'} × ${it.qty}`).join(', ')
+        return (
+          <div key={o.id} className="p-4 flex items-center justify-between gap-4 flex-wrap">
+            <div className="min-w-0">
+              <div className="font-semibold text-primary-dark">{o.id} · {o.customer}</div>
+              <div className="text-sm text-primary-dark/60 truncate">{names}</div>
+              <div className="text-xs text-primary-dark/40">Выдача: {o.pickup}</div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`chip text-xs font-semibold ${color(o.status)}`}>{o.status}</span>
+              {o.status !== 'Выдан' && (
+                <button onClick={() => advance(o.id)} className="btn-primary !py-1.5 text-sm">
+                  {o.status === 'Новый' ? 'Принять' : 'Выдать'}
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function Scanner() {
+  const { toast } = useToast()
+  const [orders, setOrders] = useState(incomingOrders.filter((o) => o.status !== 'Выдан'))
+  const [scanned, setScanned] = useState(null)
+  const [scanning, setScanning] = useState(false)
+
+  const scan = () => {
+    if (!orders.length) { toast('Все заказы выданы'); return }
+    setScanning(true)
+    setTimeout(() => {
+      const next = orders[0]
+      setScanned(next)
+      setOrders((o) => o.slice(1))
+      setScanning(false)
+      toast(`Заказ ${next.id} подтверждён`)
+    }, 1400)
+  }
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="card p-6 flex flex-col items-center justify-center text-center">
+        <div className={`relative w-56 h-56 rounded-2xl border-4 ${scanning ? 'border-primary' : 'border-dashed border-primary/30'} grid place-items-center overflow-hidden bg-primary/5`}>
+          <ScanLine size={64} className={`text-primary/40 ${scanning ? 'animate-pulse' : ''}`} />
+          {scanning && <div className="absolute left-0 right-0 h-0.5 bg-primary animate-[fade-up_1.4s_ease-in-out_infinite]" style={{ top: '50%' }} />}
+        </div>
+        <button onClick={scan} disabled={scanning} className="btn-primary mt-6">
+          <QrCode size={18} /> {scanning ? 'Сканирование…' : 'Сканировать QR заказа'}
+        </button>
+        <p className="mt-2 text-xs text-primary-dark/50">Демо: камера имитируется, берётся следующий заказ из очереди.</p>
+      </div>
+
+      <div className="card p-6">
+        <h3 className="font-bold text-primary">Результат</h3>
+        {scanned ? (
+          <div className="mt-4 rounded-xl bg-mint/30 p-4 animate-fade-up">
+            <div className="flex items-center gap-2 text-primary font-bold"><Check size={18} /> Заказ подтверждён</div>
+            <div className="mt-2 text-sm">№ {scanned.id} · {scanned.customer}</div>
+            <ul className="mt-2 text-sm text-primary-dark/70">
+              {scanned.items.map((it) => <li key={it.dishId}>{dishById(it.dishId)?.name} × {it.qty}</li>)}
+            </ul>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-primary-dark/50">Отсканируйте QR-код клиента, чтобы подтвердить выдачу.</p>
+        )}
+        <div className="mt-4 text-sm text-primary-dark/60">В очереди на выдачу: <b className="text-primary">{orders.length}</b></div>
+      </div>
+    </div>
+  )
+}
+
+function Analytics() {
+  const t = partnerAnalytics.totals
+  return (
+    <div className="space-y-6">
+      <div className="grid sm:grid-cols-4 gap-4">
+        <MiniStat label="Выручка / нед." value={tenge(t.revenue)} icon={TrendingUp} block />
+        <MiniStat label="Продано блюд" value={t.meals} icon={Package} block />
+        <MiniStat label="Спасено еды" value={`${t.wasteSaved} кг`} icon={Leaf} block />
+        <MiniStat label="Рейтинг" value={`★ ${t.rating}`} icon={Star} block />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="card p-5">
+          <h3 className="font-bold text-primary mb-4">Выручка по дням, ₸</h3>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={partnerAnalytics.revenueByDay}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+              <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
+              <YAxis tickLine={false} axisLine={false} fontSize={12} width={48} />
+              <Tooltip formatter={(v) => tenge(v)} />
+              <Bar dataKey="revenue" fill="#1A4D3E" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="card p-5">
+          <h3 className="font-bold text-primary mb-4">Продано блюд по дням</h3>
+          <ResponsiveContainer width="100%" height={240}>
+            <LineChart data={partnerAnalytics.revenueByDay}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+              <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
+              <YAxis tickLine={false} axisLine={false} fontSize={12} width={32} />
+              <Tooltip />
+              <Line type="monotone" dataKey="meals" stroke="#F4D03F" strokeWidth={3} dot={{ r: 4, fill: '#1A4D3E' }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Reviews() {
+  const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+  return (
+    <div className="space-y-4">
+      <div className="card p-5 flex items-center gap-4">
+        <div className="text-4xl font-extrabold text-primary">{avg}</div>
+        <div>
+          <div className="flex text-accent">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={18} fill={i < Math.round(avg) ? '#F4D03F' : 'none'} />)}</div>
+          <div className="text-sm text-primary-dark/60">{reviews.length} отзывов</div>
+        </div>
+      </div>
+      {reviews.map((r) => (
+        <div key={r.id} className="card p-4">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-primary-dark">{r.author}</span>
+            <span className="text-xs text-primary-dark/40">{r.date}</span>
+          </div>
+          <div className="flex text-accent my-1">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} fill={i < r.rating ? '#F4D03F' : 'none'} />)}</div>
+          <p className="text-sm text-primary-dark/70">{r.text}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function Profile({ restaurant }) {
+  const { toast } = useToast()
+  return (
+    <div className="card p-6 max-w-xl grid gap-3">
+      <h3 className="font-bold text-primary">Профиль заведения</h3>
+      <In label="Название" value={restaurant.name} onChange={() => {}} />
+      <In label="Адрес" value={restaurant.address} onChange={() => {}} />
+      <div className="grid grid-cols-2 gap-3">
+        <In label="Часы работы" value={restaurant.hours} onChange={() => {}} />
+        <In label="Телефон" value={restaurant.phone} onChange={() => {}} />
+      </div>
+      <button onClick={() => toast('Профиль сохранён')} className="btn-primary justify-self-start">Сохранить</button>
+    </div>
+  )
+}
+
+function In({ label, value, onChange, type = 'text' }) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold text-primary-dark/50 uppercase tracking-wide">{label}</span>
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-xl border border-black/10 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+    </label>
+  )
+}
+
+function MiniStat({ label, value, icon: Icon, block }) {
+  if (block) {
+    return (
+      <div className="card p-4">
+        {Icon && <Icon size={20} className="text-primary" />}
+        <div className="mt-2 text-xl font-extrabold text-primary">{value}</div>
+        <div className="text-sm text-primary-dark/60">{label}</div>
+      </div>
+    )
+  }
+  return (
+    <div className="text-right">
+      <div className="text-xs text-primary-dark/50">{label}</div>
+      <div className="font-extrabold text-primary">{value}</div>
+    </div>
+  )
+}
